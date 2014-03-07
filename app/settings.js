@@ -7,7 +7,7 @@
 /* Drupal Paths */
  
 // Site Path (do not use a trailing slash)
-Drupal.settings.site_path = ''; // e.g. http://www.example.com
+Drupal.settings.site_path = 'http://localhost/demo.drupalgap.org'; // e.g. http://www.example.com
 
 // Default Services Endpoint Path
 Drupal.settings.endpoint = 'drupalgap';
@@ -42,7 +42,7 @@ Drupal.settings.cache.views.expiration = 3600;
 drupalgap.settings.title = 'DrupalGap';
  
 // App Front Page
-drupalgap.settings.front = 'dashboard';
+drupalgap.settings.front = 'dg_pro_welcome';
 
 // Theme
 drupalgap.settings.theme = 'easystreet3';
@@ -79,7 +79,7 @@ drupalgap.settings.loader = {
 
 /** Custom Modules - www/app/modules/custom **/
 
-//Drupal.modules.custom['my_module'] = {};
+Drupal.modules.custom['dg_pro'] = {};
 
 /***************************************|
  * Menus - http://drupalgap.org/node/85 |
@@ -178,12 +178,12 @@ drupalgap.settings.blocks.easystreet3 = {
     title:{}
   },
   navigation:{
-    user_menu_anonymous:{
+    /*user_menu_anonymous:{
       roles:{
         value:['anonymous user'],
         mode:'include',
       }
-    },
+    },*/
     user_menu_authenticated:{
       roles:{
         value:['authenticated user'],
@@ -265,7 +265,7 @@ drupalgap.settings.camera = {
 //   PhoneGap 3.0.0 and above note, you must install a plugin to see console
 //   log messages. See the 'Debug console' section here:
 //   http://docs.phonegap.com/en/edge/guide_cli_index.md.html#The%20Command-line%20Interface
-Drupal.settings.debug = false; /* Set to true to see console.log debug
+Drupal.settings.debug = true; /* Set to true to see console.log debug
                                   information. Set to false when publishing
                                   app! */
 
