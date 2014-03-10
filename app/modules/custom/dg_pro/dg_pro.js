@@ -15,7 +15,7 @@ function dg_pro_menu() {
   items['dg_pro_setup'] = {
     title: 'Setup',
     page_callback: 'drupalgap_get_form',
-    page_arguments: ['drupalgap_setup_form']
+    page_arguments: ['dg_pro_setup_form']
   };
   items['dg_pro_demo'] = {
     title: 'Setup',
@@ -34,14 +34,7 @@ function dg_pro_menu() {
 function dg_pro_mvc_model() {
   var models = {
     site: {
-      primary_key: 'sid',
       fields: {
-        name: {
-          type: 'textfield',
-          title: 'Name',
-          /*description: 'Enter a name for your Drupal 7 site',*/
-          required: true
-        },
         url: {
           type: 'text',
           title: 'URL',
@@ -65,6 +58,17 @@ function dg_pro_form_alter(form, form_state, form_id) {
         form.elements.pass.default_value = 'd3m0drup41g4p';
       }
     }
+    else {
+      // Not in demonstration mode...
+      
+      if (form_id == 'mvc_model_create_form') {
+        form.prefix += '<p>Enter the URL to your Drupal 7 site.</p>';
+        form.elements.submit.value = 'Add New Site';
+        form.elements.submit.options.attributes['data-icon'] = 'plus';
+        form.action = 'dg_pro_setup';
+      }
+      
+    }
   }
   catch (error) { console.log('dg_pro_form_alter - ' + error); }
 }
@@ -81,69 +85,64 @@ function dg_pro_services_postprocess(options, result) {
   catch (error) { console.log('dg_pro_services_postprocess - ' + error); }
 }
 
-function drupalgap_setup_form(form, form_state) {
+function dg_pro_setup_form(form, form_state) {
   try {
     form.elements.site = {
-      title: 'Add Site',
+      title: 'Sites',
       type: 'select',
       required: true,
-      children: [
-        {
-          markup: theme(
-            'button_link',
-            {
-              text: 'Add Site',
-              path: 'mvc/item-add/dg_pro/site',
-              attributes: {
-                'data-icon': 'plus'
-              }
-            }
-          )
-        }
-      ]
+      options: []
     };
-    /*form.prefix = '<p>Enter the URL to your Drupal site.</p>';
-    form.elements.site_url = {
-      type: 'textfield',
-      title: 'Site URL',
-      required: true,
-      default_value: drupalgap.demo.site_path
-    };*/
+    var sites = collection_load('dg_pro', 'site');
+    $.each(sites, function(index, site){
+        form.elements.site.options[site.id] = site.url;
+    });
     form.elements.submit = {
       type: 'submit',
-      value: 'Connect'
+      value: 'Connect',
+      options: {
+        attributes: {
+          'data-icon': 'action',
+          'data-iconpos': 'top'
+        }
+      }
     };
+    form.suffix += 
+    '<p>' +
+      l('Add Another Site', 'mvc/item-add/dg_pro/site', { attributes: { 'data-icon': 'plus', 'data-role': 'button' } }) +
+      l('Manage Sites', 'mvc/collection/list/dg_pro/site', { attributes: { 'data-icon': 'bars', 'data-role': 'button' } }) +
+    '</p>';
     return form;
   }
-  catch (error) { console.log('drupalgap_setup_form - ' + error); }
+  catch (error) { console.log('dg_pro_setup_form - ' + error); }
 }
 
-/*function drupalgap_setup_form_validate(form, form_state) {
+/*function dg_pro_setup_form_validate(form, form_state) {
   try {
   }
-  catch (error) { console.log('drupalgap_setup_form_validate - ' + error); }
+  catch (error) { console.log('dg_pro_setup_form_validate - ' + error); }
 }*/
 
-function drupalgap_setup_form_submit(form, form_state) {
+function dg_pro_setup_form_submit(form, form_state) {
   try {
-    var site_url = form_state.values['site_url'];
-    Drupal.settings.site_path = site_url;
+    var site = item_load('dg_pro', 'site', form_state.values['site']);
+    Drupal.settings.site_path = site.url;
     system_connect({
         success: function(result) {
           drupalgap_set_message('Connection successful, enjoy!');
-          if (drupalgap.demo.site_path == site_url) {
+          if (drupalgap.demo.site_path == site.url) {
             drupalgap.demo.mode = true;
           }
           drupalgap.settings.front = 'dg_pro_dashboard';  
           drupalgap_goto(drupalgap.settings.front);
         },
         error: function(xhr, status, message) {
-          var msg = 'The connection to ' + site_url + ' has failed!';
-          alert(msg);
+          var msg = 'The connection to ' + site.url + ' has failed!\n\n' + message;
+          drupalgap_alert(msg);
         }
     });
   }
-  catch (error) { console.log('drupalgap_setup_form_submit - ' + error); }
+  catch (error) { console.log('dg_pro_setup_form_submit - ' + error); }
 }
 
 /**
@@ -152,7 +151,7 @@ function drupalgap_setup_form_submit(form, form_state) {
 function drupalgap_demo_click() {
   try {
     // Fake a submission on the setup form.
-    drupalgap_setup_form_submit(null, {
+    dg_pro_setup_form_submit(null, {
         values: {
           site_url: drupalgap.demo.site_path
         }
@@ -174,17 +173,15 @@ function dg_pro_welcome_page() {
       markup: '<div style="text-align: center;"><p>The Open Source Mobile App Development Kit for Drupal</p>' +
         theme('image', { path: 'themes/easystreet3/images/drupalgap.jpg'})
     };
-    // If there aren't any sites added yet, send them directly to the add site
-    // form, otherwise send them to the setup page.
     content.setup = {
       theme: 'button_link',
       text: 'Setup',
-      path: 'mvc/item-add/dg_pro/site',
       options: {
         attributes: {
           'data-theme': 'b',
           'data-icon': 'gear',
-          'data-iconpos': 'right'
+          'data-iconpos': 'right',
+          onclick: 'dg_pro_setup_button_click()'
         }
       }
     };
@@ -208,6 +205,24 @@ function dg_pro_welcome_page() {
 /**
  *
  */
+function dg_pro_setup_button_click() {
+  try {
+    // If there aren't any sites added yet, send them directly to the add site
+    // form, otherwise send them to the setup page.
+    var sites = collection_load('dg_pro', 'site');
+    if (sites.length == 0) {
+      drupalgap_goto('mvc/item-add/dg_pro/site');
+      return;
+    }
+    drupalgap_goto('dg_pro_setup');
+    
+  }
+  catch (error) { console.log('dg_pro_setup_button_click - ' + error); }
+}
+
+/**
+ *
+ */
 function dg_pro_demo_page() {
   try {
     var content = {};
@@ -216,7 +231,7 @@ function dg_pro_demo_page() {
     };
     content.intro = {
       markup: '<div style="text-align: center;">' +
-        '<p>Connect to our demonstration Drupal 7 website to test out features available in DrupalGap.</p>' +
+        '<p>Try this demo Drupal 7 website, with DrupalGap.</p>' +
         theme('image', { path: 'themes/easystreet3/images/drupalgap.jpg'}) + '</div>'
     };
     content.connect = {
@@ -224,8 +239,9 @@ function dg_pro_demo_page() {
       text: 'Connect',
       attributes: {
         onclick: 'drupalgap_demo_click()',
-        'data-icon': 'cloud',
-        'data-iconpos': 'right'
+        'data-icon': 'action',
+        'data-iconpos': 'top',
+        'data-theme': 'b'
       }
     };
     return content;
