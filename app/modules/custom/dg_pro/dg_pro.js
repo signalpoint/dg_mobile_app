@@ -25,6 +25,10 @@ function dg_pro_menu() {
     title: 'Dashboard',
     page_callback: 'dg_pro_dashboard_page',
   };
+  items['dg_pro_manage_sites'] = {
+    title: 'Manage Sites',
+    page_callback: 'dg_pro_manage_sites_page',
+  };
   return items;
 }
 
@@ -60,11 +64,11 @@ function dg_pro_form_alter(form, form_state, form_id) {
     }
     else {
       // Not in demonstration mode...
-      
-      if (form_id == 'mvc_model_create_form') {
+      if (form_id == 'item_create_form') {
         form.prefix += '<p>Enter the URL to your Drupal 7 site.</p>';
         form.elements.submit.value = 'Add New Site';
         form.elements.submit.options.attributes['data-icon'] = 'plus';
+        form.elements.url.options.attributes['placeholder'] = 'http://www.example.com';
         form.action = 'dg_pro_setup';
       }
       
@@ -110,7 +114,7 @@ function dg_pro_setup_form(form, form_state) {
     form.suffix += 
     '<p>' +
       l('Add Another Site', 'mvc/item-add/dg_pro/site', { attributes: { 'data-icon': 'plus', 'data-role': 'button' } }) +
-      l('Manage Sites', 'mvc/collection/list/dg_pro/site', { attributes: { 'data-icon': 'bars', 'data-role': 'button' } }) +
+      l('Manage Sites', 'dg_pro_manage_sites', { attributes: { 'data-icon': 'bars', 'data-role': 'button' } }) +
     '</p>';
     return form;
   }
@@ -258,5 +262,44 @@ function dg_pro_dashboard_page() {
   catch (error) { console.log('dg_pro_dashboard_page - ' + error); }
 }
 
+/**
+ *
+ */
+function dg_pro_manage_sites_page() {
+  try {
+    var content = {};
+    content.sites = {
+      theme: 'jqm_item_list',
+    };
+    content.sites.items = [];
+    var sites = collection_load('dg_pro', 'site');
+    $.each(sites, function(index, site){
+        content.sites.items.push(
+          '<a>' + site.url + '</a>' +
+          l('Delete', null, { attributes: { 'data-icon': 'delete', 'onclick': 'dg_pro_manage_sites_delete(' + site.id + '); return false;'}})
+        )
+    });
+    content.add_another = {
+      markup: l('Add Another Site', 'mvc/item-add/dg_pro/site', { attributes: { 'data-icon': 'plus', 'data-role': 'button', 'data-theme': 'b' } })
+    };
+    return content;
+  }
+  catch (error) { console.log('dg_pro_manage_sites_page - ' + error); }
+}
 
+
+
+/**
+ *
+ */
+function dg_pro_manage_sites_delete(id) {
+  try {
+    drupalgap_confirm('Are you sure you want to delete this site?', {
+        confirmCallback: function(button) {
+          alert(button);
+        }
+    });
+  }
+  catch (error) { console.log('dg_pro_manage_sites_delete - ' + error); }
+}
 
